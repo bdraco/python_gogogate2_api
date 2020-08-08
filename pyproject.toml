@@ -94,7 +94,6 @@ combine_as_imports = true
 [tool.coverage.run]
 source = ["gogogate2_api"]
 branch = true
-relative_files = true
 
 [tool.coverage.report]
 fail_under = 98.0
