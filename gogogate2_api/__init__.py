@@ -15,6 +15,7 @@ import requests
 from requests import Response
 from typing_extensions import Final
 
+
 from .common import (
     AbstractDoor,
     ApiError,
