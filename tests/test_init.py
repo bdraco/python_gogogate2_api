@@ -243,3 +243,59 @@ def test_open_and_close_door(
     assert door1.status == DoorStatus.OPENED
     assert door2.status == DoorStatus.CLOSED
     assert door3.status == DoorStatus.UNDEFINED
+
+
+@pytest.mark.parametrize(
+    ("api_generator", "server_generator", "true_value"),
+    (
+        (GogoGate2Api, MockGogoGate2Server, "1"),
+        (ISmartGateApi, MockISmartGateServer, "yes"),
+    ),
+)
+@responses.activate
+# pylint: disable=too-many-statements
+def test_remoteaccess(
+    api_generator: ApiGenerator, server_generator: ServerGenerator, true_value: str
+) -> None:
+    """Test open and close door."""
+    api = api_generator("device1", "fakeuser", "fakepassword")
+    server = server_generator(api)
+
+    server.set_info_value("remoteaccessenabled", "false")
+    assert not api.info().remoteaccessenabled
+    server.set_info_value("remoteaccessenabled", "no")
+    assert not api.info().remoteaccessenabled
+    server.set_info_value("remoteaccessenabled", "0")
+    assert not api.info().remoteaccessenabled
+
+    server.set_info_value("remoteaccessenabled", true_value)
+    assert api.info().remoteaccessenabled
+    server.set_info_value("remoteaccessenabled", true_value.upper())
+    assert api.info().remoteaccessenabled
+    server.set_info_value("remoteaccessenabled", true_value.lower())
+    assert api.info().remoteaccessenabled
+
+
+@pytest.mark.parametrize(
+    ("api_generator", "server_generator"),
+    ((GogoGate2Api, MockGogoGate2Server), (ISmartGateApi, MockISmartGateServer)),
+)
+@responses.activate
+# pylint: disable=too-many-statements
+def test_sensor_temperature_and_voltage(
+    api_generator: ApiGenerator, server_generator: ServerGenerator
+) -> None:
+    """Test open and close door."""
+    api = api_generator("device1", "fakeuser", "fakepassword")
+    server_generator(api)
+
+    # Initial info.
+    response = api.info()
+    assert response.door1.temperature == 16.3
+    assert response.door1.voltage == 40
+
+    assert response.door2.temperature is None
+    assert response.door2.voltage == 40
+
+    assert response.door3.temperature == 16.3
+    assert response.door3.voltage is None

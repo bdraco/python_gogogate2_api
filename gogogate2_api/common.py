@@ -8,6 +8,8 @@ from xml.etree.ElementTree import Element  # nosec
 
 from typing_extensions import Final
 
+from .const import NONE_INT
+
 GenericType = TypeVar("GenericType")
 
 
@@ -210,6 +212,7 @@ class AbstractDoor:
     events: Optional[int]
     sensorid: Optional[str]
     temperature: Optional[float]
+    voltage: Optional[int]
 
 
 @dataclass(frozen=True)
@@ -276,7 +279,7 @@ class AbstractInfoResponse:
     user: str
     model: str
     apiversion: str
-    remoteaccessenabled: int
+    remoteaccessenabled: bool
     remoteaccess: str
     firmwareversion: str
 
@@ -392,7 +395,12 @@ def outputs_or_raise(element: Element) -> Outputs:
 
 def gogogate2_door_or_raise(door_id: int, element: Element) -> GogoGate2Door:
     """Get door from xml element."""
-    temp = float_or_none(element_text_or_none(element, "temperature"))
+    temp: Final[Optional[float]] = float_or_none(
+        element_text_or_none(element, "temperature")
+    )
+    voltage: Final[Optional[int]] = int_or_none(
+        element_text_or_none(element, "voltage")
+    )
     return GogoGate2Door(
         door_id=door_id,
         permission=element_text_or_raise(element, "permission").lower() == "yes",
@@ -409,7 +417,8 @@ def gogogate2_door_or_raise(door_id: int, element: Element) -> GogoGate2Door:
         sensorid=element_text_or_none(element, "sensorid"),
         camera=element_text_or_raise(element, "camera").lower() == "yes",
         events=int_or_none(element_text_or_none(element, "events")),
-        temperature=None if temp is None else None if temp < -100000 else temp,
+        temperature=None if temp is None else None if temp <= NONE_INT else temp,
+        voltage=None if voltage is None else None if voltage <= NONE_INT else voltage,
     )
 
 
@@ -417,6 +426,9 @@ def ismartgate_door_or_raise(door_id: int, element: Element) -> ISmartGateDoor:
     """Get door from xml element."""
     temp: Final[Optional[float]] = float_or_none(
         element_text_or_none(element, "temperature")
+    )
+    voltage: Final[Optional[int]] = int_or_none(
+        element_text_or_none(element, "voltage")
     )
     return ISmartGateDoor(
         door_id=door_id,
@@ -437,7 +449,8 @@ def ismartgate_door_or_raise(door_id: int, element: Element) -> ISmartGateDoor:
         sensorid=element_text_or_none(element, "sensorid"),
         camera=element_text_or_raise(element, "camera").lower() == "yes",
         events=int_or_none(element_text_or_none(element, "events")),
-        temperature=None if temp is None else None if temp < -100000 else temp,
+        temperature=None if temp is None else None if temp <= NONE_INT else temp,
+        voltage=None if voltage is None else None if voltage <= NONE_INT else voltage,
     )
 
 
@@ -471,8 +484,10 @@ def element_to_ismartgate_info_response(element: Element) -> ISmartGateInfoRespo
         ismartgatename=element_text_or_raise(element, "ismartgatename"),
         model=element_text_or_raise(element, "model"),
         apiversion=element_text_or_raise(element, "apiversion"),
-        remoteaccessenabled=element_text_or_raise(element, "remoteaccessenabled")
-        == "1",
+        remoteaccessenabled=element_text_or_raise(
+            element, "remoteaccessenabled"
+        ).lower()
+        == "yes",
         remoteaccess=element_text_or_raise(element, "remoteaccess"),
         firmwareversion=element_text_or_raise(element, "firmwareversion"),
         newfirmware=element_text_or_raise(element, "newfirmware").lower() == "yes",

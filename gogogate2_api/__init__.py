@@ -8,8 +8,8 @@ from typing import Dict, Generic, Optional, TypeVar, Union, cast
 import uuid
 from xml.etree.ElementTree import Element  # nosec
 
-from Cryptodome.Cipher import AES
-from Cryptodome.Cipher._mode_cbc import CbcMode
+from Crypto.Cipher import AES  # nosec
+from Crypto.Cipher._mode_cbc import CbcMode  # nosec
 from defusedxml import ElementTree
 import requests
 from requests import Response
@@ -40,6 +40,8 @@ from .common import (
     get_door_by_id,
 )
 from .const import GogoGate2ApiErrorCode, ISmartGateApiErrorCode
+
+DEFAULT_TIMEOUT = 20
 
 
 class ApiCipher:
@@ -148,13 +150,19 @@ class AbstractGateApi(
     API_URL_TEMPLATE: Final[str] = "http://%s/api.php"
 
     def __init__(
-        self, host: str, username: str, password: str, api_cipher: ApiCipherType
+        self,
+        host: str,
+        username: str,
+        password: str,
+        api_cipher: ApiCipherType,
+        timeout: Optional[int] = DEFAULT_TIMEOUT,
     ) -> None:
         """Initialize the object."""
         self._host: Final[str] = host
         self._username: Final[str] = username
         self._password: Final[str] = password
         self._cipher: Final[ApiCipherType] = api_cipher
+        self._timeout = timeout or DEFAULT_TIMEOUT
         self._api_url: Final[str] = AbstractGateApi.API_URL_TEMPLATE % host
 
     @property
@@ -199,7 +207,7 @@ class AbstractGateApi(
                 "data": self._cipher.encrypt(command_str),
                 **self._get_extra_url_params(),
             },
-            timeout=2,
+            timeout=self._timeout,
         )
         response_raw: Final[str] = response.content.decode("utf-8")
 
@@ -304,10 +312,20 @@ class ISmartGateApi(
 ):
     """API for interacting with iSmartGate devices."""
 
-    def __init__(self, host: str, username: str, password: str) -> None:
+    def __init__(
+        self,
+        host: str,
+        username: str,
+        password: str,
+        timeout: Optional[int] = DEFAULT_TIMEOUT,
+    ) -> None:
         """Initialize the object."""
         super().__init__(
-            host, username, password, ISmartGateApiCipher(username, password)
+            host,
+            username,
+            password,
+            ISmartGateApiCipher(username, password),
+            timeout=timeout,
         )
 
     def info(self) -> ISmartGateInfoResponse:
@@ -358,9 +376,17 @@ class GogoGate2Api(
 ):
     """API for interacting with GogoGate2 devices."""
 
-    def __init__(self, host: str, username: str, password: str) -> None:
+    def __init__(
+        self,
+        host: str,
+        username: str,
+        password: str,
+        timeout: Optional[int] = DEFAULT_TIMEOUT,
+    ) -> None:
         """Initialize the object."""
-        super().__init__(host, username, password, GogoGate2ApiCipher())
+        super().__init__(
+            host, username, password, GogoGate2ApiCipher(), timeout=timeout
+        )
 
     def info(self) -> GogoGate2InfoResponse:
         """Get info about the device and doors."""

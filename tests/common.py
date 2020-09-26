@@ -20,7 +20,7 @@ from gogogate2_api.common import (
     RequestOption,
     Wifi,
 )
-from gogogate2_api.const import GogoGate2ApiErrorCode, ISmartGateApiErrorCode
+from gogogate2_api.const import NONE_INT, GogoGate2ApiErrorCode, ISmartGateApiErrorCode
 import responses
 from typing_extensions import Final
 
@@ -101,6 +101,10 @@ class AbstractMockServer(Generic[MockInfoResponse], abc.ABC):
     def set_device_status(self, door_id: int, door_status: DoorStatus) -> None:
         """Set the status of a device."""
         self._info_data[f"door{door_id}"]["status"] = door_status.value
+
+    def set_info_value(self, name: str, value: Any) -> None:
+        """Set a value of info data."""
+        self._info_data[name] = value
 
     # pylint: disable=too-many-return-statements
     def _handle_request(self, request: Any) -> tuple:
@@ -209,7 +213,7 @@ class MockGogoGate2Server(AbstractMockServer[GogoGate2InfoResponse]):
             model="GG2",
             apicode=self.api_code,
             apiversion="apiversion123",
-            remoteaccessenabled=0,
+            remoteaccessenabled=False,
             remoteaccess="abcdefg12345.my-gogogate.com",
             firmwareversion="761",
             gogogatename="Home",
@@ -225,6 +229,7 @@ class MockGogoGate2Server(AbstractMockServer[GogoGate2InfoResponse]):
                 events=None,
                 sensorid="sensor123",
                 temperature=16.3,
+                voltage=40,
             ),
             door2=GogoGate2Door(
                 door_id=3,
@@ -237,7 +242,8 @@ class MockGogoGate2Server(AbstractMockServer[GogoGate2InfoResponse]):
                 camera=False,
                 events=None,
                 sensorid="sensor123",
-                temperature=16.3,
+                temperature=NONE_INT,
+                voltage=40,
             ),
             door3=GogoGate2Door(
                 door_id=3,
@@ -251,6 +257,7 @@ class MockGogoGate2Server(AbstractMockServer[GogoGate2InfoResponse]):
                 events=None,
                 sensorid="sensor123",
                 temperature=16.3,
+                voltage=NONE_INT,
             ),
             outputs=Outputs(output1=True, output2=False, output3=False,),
             network=Network(ip="127.0.0.1"),
@@ -317,7 +324,7 @@ class MockISmartGateServer(AbstractMockServer[ISmartGateInfoResponse]):
             user=self.username,
             model="GG2",
             apiversion="apiversion123",
-            remoteaccessenabled=0,
+            remoteaccessenabled=False,
             remoteaccess="abcdefg12345.my-gogogate.com",
             firmwareversion="761",
             door1=ISmartGateDoor(
@@ -335,6 +342,7 @@ class MockISmartGateServer(AbstractMockServer[ISmartGateInfoResponse]):
                 events=None,
                 sensorid="sensor123",
                 temperature=16.3,
+                voltage=40,
             ),
             door2=ISmartGateDoor(
                 enabled=True,
@@ -350,7 +358,8 @@ class MockISmartGateServer(AbstractMockServer[ISmartGateInfoResponse]):
                 camera=False,
                 events=None,
                 sensorid="sensor123",
-                temperature=16.3,
+                temperature=NONE_INT,
+                voltage=40,
             ),
             door3=ISmartGateDoor(
                 enabled=True,
@@ -367,6 +376,7 @@ class MockISmartGateServer(AbstractMockServer[ISmartGateInfoResponse]):
                 events=None,
                 sensorid="sensor123",
                 temperature=16.3,
+                voltage=NONE_INT,
             ),
             network=Network(ip="127.0.0.1"),
             wifi=Wifi(SSID="Wifi network", linkquality="80%", signal="20"),
